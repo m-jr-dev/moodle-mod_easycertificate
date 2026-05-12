@@ -1,0 +1,545 @@
+/* Editor visual do Easy Certificate. */
+.easycertificate-template-form .ec-editor {
+    display: grid;
+    grid-template-columns: 214px minmax(0, 1fr) 198px;
+    column-gap: 12px;
+    align-items: start;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+}
+.easycertificate-template-form .ec-toolbar,
+.easycertificate-template-form .ec-items-panel {
+    position: sticky;
+    top: 12px;
+    align-self: start;
+    min-width: 0;
+}
+.easycertificate-template-form .ec-toolbar {
+    grid-column: 1;
+    width: 214px;
+}
+.easycertificate-template-form .ec-items-panel {
+    grid-column: 3;
+    width: 198px;
+    max-height: calc(100vh - 24px);
+    overflow: auto;
+    border-radius: 10px;
+    box-shadow: none;
+}
+.easycertificate-template-form .ec-workarea {
+    grid-column: 2;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 760px;
+    overflow: auto;
+    padding: 22px;
+    background: #f4f6f8;
+    border: 1px solid #d8dde3;
+    border-radius: 12px;
+    box-sizing: border-box;
+}
+.easycertificate-template-form .ec-toolbar .card-body,
+.easycertificate-template-form .ec-items-panel .card-body {
+    padding: 10px;
+}
+.easycertificate-template-form .ec-toolbar-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+}
+.easycertificate-template-form .ec-toolbar .btn {
+    width: 100%;
+    min-height: 28px;
+    margin-bottom: 6px;
+    border-radius: 7px;
+    font-size: 11px;
+    padding: 5px 7px;
+    text-align: left;
+}
+.easycertificate-template-form .ec-toolbar-actions .btn,
+.easycertificate-template-form .ec-toolbar .btn-group .btn,
+.easycertificate-template-form #ec-pages-tabs .btn {
+    text-align: center !important;
+}
+.easycertificate-template-form .ec-toolbar .btn i {
+    width: 14px;
+    margin-right: 5px;
+    font-size: 12px;
+    text-align: center;
+    display: inline-block;
+}
+.easycertificate-template-form .ec-save-btn {
+    background: #102033;
+    border-color: #102033;
+}
+.easycertificate-template-form .ec-back-btn {
+    background: #e8edf3;
+    border-color: #e8edf3;
+    color: #182230;
+}
+.easycertificate-template-form .ec-toolbar .btn-group {
+    display: grid;
+    grid-template-columns: 1fr 46px 1fr;
+    width: 100%;
+    padding: 3px;
+    gap: 0;
+    background: #dbe2ea;
+    border-radius: 8px;
+}
+.easycertificate-template-form .ec-toolbar .btn-group .btn {
+    width: auto;
+    margin-bottom: 0;
+    border: 0;
+    background: transparent;
+    color: #182230;
+    font-size: 10px;
+    line-height: 1.15;
+    padding: 4px 3px;
+    white-space: normal;
+}
+.easycertificate-template-form .ec-toolbar hr {
+    margin: 10px 0;
+}
+.easycertificate-template-form #ec-zoom-label {
+    cursor: default;
+    font-weight: 600;
+}
+.easycertificate-template-form .ec-pages-tabs .btn {
+    text-align: center !important;
+}
+
+.easycertificate-template-form .ec-pages-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.easycertificate-template-form .ec-page-tab-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 30px;
+    gap: 4px;
+    align-items: center;
+}
+.easycertificate-template-form .ec-page-tab-item .btn {
+    margin-bottom: 0;
+}
+.easycertificate-template-form .ec-page-remove {
+    width: 30px;
+    min-width: 30px;
+    padding-left: 0;
+    padding-right: 0;
+    color: #ca3120;
+}
+.easycertificate-template-form .ec-page-remove:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+.easycertificate-template-form .ec-stage-wrap {
+    position: relative;
+    width: 1145px !important;
+    height: 794px;
+    min-height: 794px;
+    flex: 0 0 auto;
+}
+.easycertificate-template-form .ec-stage {
+    position: relative;
+    width: 1145px !important;
+    height: 794px;
+    background-color: #fff;
+    background-size: cover;
+    background-position: center;
+    border-radius: 6px;
+    box-shadow: 0 8px 28px rgba(15, 23, 42, .14);
+    transform-origin: top left;
+    overflow: visible;
+    box-sizing: border-box;
+}
+.easycertificate-template-form .ec-element {
+    position: absolute;
+    border: 1px dashed transparent;
+    cursor: move;
+    user-select: none;
+    box-sizing: border-box;
+    padding: 4px;
+    min-width: 20px;
+    min-height: 20px;
+    overflow: visible;
+}
+.easycertificate-template-form .ec-element::before {
+    content: "";
+    position: absolute;
+    left: -12px;
+    right: -12px;
+    top: -48px;
+    height: 50px;
+    pointer-events: auto;
+}
+.easycertificate-template-form .ec-element:hover,
+.easycertificate-template-form .ec-element.dragging {
+    border-color: transparent;
+    background: transparent;
+}
+.easycertificate-template-form .ec-element.ec-selected {
+    border-color: #0f6cbf;
+    background: rgba(15, 108, 191, .04);
+}
+.easycertificate-template-form .ec-element-text {
+    white-space: pre-wrap;
+    overflow: visible;
+    line-height: 1.2;
+}
+.easycertificate-template-form .ec-element-image,
+.easycertificate-template-form .ec-element-signature,
+.easycertificate-template-form .ec-preview-image,
+.easycertificate-template-form .ec-preview-signature {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+}
+.easycertificate-template-form .ec-element-image img,
+.easycertificate-template-form .ec-element-signature img,
+.easycertificate-template-form .ec-preview-element img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+}
+.easycertificate-template-form .ec-element-border {
+    border: 2px solid #111;
+    background: transparent;
+}
+.easycertificate-template-form .ec-element .ec-element-edit,
+.easycertificate-template-form .ec-element .ec-element-duplicate,
+.easycertificate-template-form .ec-element .ec-element-delete {
+    display: none !important;
+    position: absolute;
+    top: -38px;
+    width: 35px;
+    height: 35px;
+    border-radius: 999px;
+    font-size: 15px;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    border: 1px solid rgba(255, 255, 255, .9);
+    color: #fff;
+    line-height: 1;
+    padding: 0;
+    z-index: 30;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .22);
+}
+.easycertificate-template-form .ec-element .ec-element-edit i,
+.easycertificate-template-form .ec-element .ec-element-duplicate i,
+.easycertificate-template-form .ec-element .ec-element-delete i {
+    font-size: 15px;
+    line-height: 1;
+    margin: 0;
+    width: auto;
+}
+.easycertificate-template-form .ec-element .ec-element-edit {
+    right: 82px;
+    background: #0f6cbf;
+}
+.easycertificate-template-form .ec-element .ec-element-duplicate {
+    right: 41px;
+    background: #475569;
+}
+.easycertificate-template-form .ec-element .ec-element-delete {
+    right: 0;
+    background: #ca3120;
+}
+.easycertificate-template-form .ec-element-no-duplicate .ec-element-edit {
+    right: 41px;
+}
+.easycertificate-template-form .ec-element-no-duplicate .ec-element-delete {
+    right: 0;
+}
+.easycertificate-template-form .ec-element-signature .ec-element-duplicate {
+    display: none !important;
+}
+.easycertificate-template-form .ec-element.ec-selected .ec-element-edit,
+.easycertificate-template-form .ec-element.ec-selected .ec-element-duplicate,
+.easycertificate-template-form .ec-element.ec-selected .ec-element-delete,
+.easycertificate-template-form .ec-element.ec-selected:hover .ec-element-edit,
+.easycertificate-template-form .ec-element.ec-selected:hover .ec-element-duplicate,
+.easycertificate-template-form .ec-element.ec-selected:hover .ec-element-delete,
+.easycertificate-template-form .ec-element.ec-selected:focus-within .ec-element-edit,
+.easycertificate-template-form .ec-element.ec-selected:focus-within .ec-element-duplicate,
+.easycertificate-template-form .ec-element.ec-selected:focus-within .ec-element-delete {
+    display: inline-flex !important;
+}
+.easycertificate-template-form .ec-resize-handle {
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+    width: 12px;
+    height: 12px;
+    display: none;
+    cursor: nwse-resize;
+    border: 2px solid #0f6cbf;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 5px rgba(15, 108, 191, .35);
+    z-index: 25;
+}
+.easycertificate-template-form .ec-element.ec-selected .ec-resize-handle,
+.easycertificate-template-form .ec-element.ec-selected:hover .ec-resize-handle,
+.easycertificate-template-form .ec-element.resizing .ec-resize-handle {
+    display: block !important;
+}
+.easycertificate-template-form .ec-guide {
+    position: absolute;
+    z-index: 20;
+    display: none;
+    pointer-events: none;
+    background: #00a6ff;
+    box-shadow: none;
+}
+.easycertificate-template-form .ec-guide-x {
+    left: 0;
+    width: 1145px !important;
+    height: 1px;
+}
+.easycertificate-template-form .ec-guide-y {
+    top: 0;
+    width: 1px;
+    height: 794px;
+}
+.easycertificate-template-form .ec-items-title {
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0 0 8px;
+    color: #182230;
+}
+.easycertificate-template-form .ec-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+.easycertificate-template-form .ec-items-empty {
+    color: #64748b;
+    font-size: 12px;
+    padding: 8px 0;
+}
+.easycertificate-template-form .ec-item-row {
+    display: grid;
+    grid-template-columns: 16px 16px minmax(0, 1fr) 20px 20px 20px 20px;
+    gap: 3px;
+    align-items: center;
+    min-height: 34px;
+    padding: 4px 0;
+    color: #263238;
+    font-size: 12px;
+    border-bottom: 1px solid #edf0f3;
+}
+.easycertificate-template-form .ec-item-row.active {
+    background: #eef6ff;
+    border-radius: 6px;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+.easycertificate-template-form .ec-item-background {
+    grid-template-columns: 16px minmax(0, 1fr) 20px 20px;
+}
+.easycertificate-template-form .ec-item-no-duplicate {
+    grid-template-columns: 16px 16px minmax(0, 1fr) 20px 20px 20px;
+}
+.easycertificate-template-form .ec-item-row.dragging {
+    opacity: .55;
+}
+.easycertificate-template-form .ec-item-move,
+.easycertificate-template-form .ec-item-type {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #182230;
+}
+.easycertificate-template-form .ec-item-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: default;
+}
+.easycertificate-template-form .ec-item-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: #182230;
+    padding: 0;
+}
+.easycertificate-template-form .ec-item-action:hover {
+    background: #e8edf3;
+}
+.easycertificate-template-form .ec-item-action i,
+.easycertificate-template-form .ec-item-move i,
+.easycertificate-template-form .ec-item-type i {
+    font-size: 12px;
+}
+.easycertificate-template-form .ec-inline-style-row {
+    margin-top: 14px;
+    padding: 16px;
+    border: 1px solid #d8e0ea;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef4fb 100%);
+}
+.easycertificate-template-form .ec-inline-style-row .col-md-6 {
+    margin-bottom: 8px;
+}
+.easycertificate-template-form .ec-inline-style-row label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: 600;
+    color: #243447;
+    margin-bottom: 7px;
+}
+.easycertificate-template-form .ec-style-control.input-group {
+    gap: 0;
+    padding: 0;
+    border: 1px solid #cfd8e3;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #fff;
+}
+.easycertificate-template-form .ec-style-control.input-group .form-control {
+    border: 0;
+    box-shadow: none;
+    height: 38px;
+}
+.easycertificate-template-form .ec-style-control.input-group .input-group-text {
+    height: 38px;
+    min-width: 42px;
+    border: 0;
+    border-right: 1px solid #d8e0ea;
+    border-radius: 0;
+    background: #eef4fb;
+    color: #243447;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.easycertificate-template-form .ec-style-control .form-control {
+    height: 32px;
+    min-height: 32px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+.easycertificate-template-form .ec-color-control input[type="color"] {
+    width: auto;
+    max-width: none;
+    min-width: 150px;
+    min-height: 32px;
+    padding: 3px 8px;
+    flex: 1 1 auto;
+}
+.easycertificate-template-form #ec-size {
+    height: 32px;
+    min-height: 32px;
+    text-align: left;
+}
+.easycertificate-template-form .ec-help-box {
+    font-size: 13px;
+}
+.easycertificate-template-form .ec-info-content {
+    display: none;
+}
+.easycertificate-template-form .ec-html-field {
+    min-height: 180px;
+}
+.easycertificate-template-form .ec-preview-body {
+    background: #f4f6f8;
+    padding: 20px;
+    overflow: auto;
+}
+.easycertificate-template-form .ec-preview-page-wrap {
+    width: 100%;
+    margin: 0 auto 20px;
+    display: flex;
+    justify-content: center;
+}
+.easycertificate-template-form .ec-preview-page {
+    position: relative;
+    width: 1123px !important;
+    max-width: none;
+    height: 794px !important;
+    flex: 0 0 auto;
+    background-color: #fff;
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 8px 28px rgba(15, 23, 42, .14);
+    transform-origin: top center;
+}
+.easycertificate-template-form .ec-preview-element {
+    position: absolute;
+    overflow: hidden;
+    white-space: pre-wrap;
+    line-height: 1.2;
+}
+.easycertificate-template-form .ec-template-manage-row {
+    margin-bottom: 20px;
+}
+.easycertificate-template-form .ec-template-manage-link {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 0;
+    font-size: 14px;
+    line-height: 1.4;
+    text-decoration: none;
+}
+.easycertificate-template-form .ec-template-manage-link:hover,
+.easycertificate-template-form .ec-template-manage-link:focus {
+    color: #0f6cbf;
+    text-decoration: underline;
+}
+.easycertificate-issued {
+    max-width: 680px;
+}
+@media (max-width: 1200px) {
+    .easycertificate-template-form .ec-editor {
+        grid-template-columns: 204px minmax(0, 1fr) 190px;
+        column-gap: 10px;
+    }
+    .easycertificate-template-form .ec-toolbar {
+        width: 204px;
+    }
+    .easycertificate-template-form .ec-items-panel {
+        width: 190px;
+    }
+}
+@media (max-width: 900px) {
+    .easycertificate-template-form .ec-editor {
+        display: block;
+    }
+    .easycertificate-template-form .ec-toolbar,
+    .easycertificate-template-form .ec-items-panel {
+        position: static;
+        width: 100%;
+        margin-bottom: 12px;
+    }
+}
+.easycertificate-template-form .ec-style-control .input-group-text {
+    height: 32px;
+    min-height: 32px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    align-items: center;
+}
+
+.easycertificate-template-form .ec-signature-error {
+    display: none;
+    margin-top: 8px;
+    margin-bottom: 0;
+    padding: 8px 10px;
+    font-size: 13px;
+}
