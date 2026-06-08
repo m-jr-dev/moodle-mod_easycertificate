@@ -25,6 +25,213 @@
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/editorlib.php');
 
+/**
+ * Reads a posted JSON field after the session key has been verified.
+ *
+ * @param string $name Field name.
+ * @return array Decoded JSON array.
+ */
+function easycertificate_decode_json_param(string $name): array {
+    if (!array_key_exists($name, $_POST) || is_array($_POST[$name])) {
+        throw new moodle_exception('missingparam', 'error', '', $name);
+    }
+
+    $json = trim(str_replace("\0", '', (string) $_POST[$name]));
+    $decoded = json_decode($json);
+
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+        throw new moodle_exception('invalidjson', 'easycertificate');
+    }
+
+    return $decoded;
+}
+
+/**
+ * Cleans a base64 data URI using an allowed MIME pattern.
+ *
+ * @param mixed $value Raw value.
+ * @param string $pattern MIME validation pattern.
+ * @return string
+ */
+function easycertificate_clean_data_uri($value, string $pattern): string {
+    $value = trim((string) $value);
+
+    if ($value === '') {
+        return '';
+    }
+
+    if (!preg_match($pattern, $value)) {
+        return '';
+    }
+
+    $comma = strpos($value, ',');
+    if ($comma === false) {
+        return '';
+    }
+
+    $base64 = substr($value, $comma + 1);
+    if (strlen($base64) > 20 * 1024 * 1024 || base64_decode($base64, true) === false) {
+        return '';
+    }
+
+    return $value;
+}
+
+/**
+ * Cleans and re-encodes template pages.
+ *
+ * @param array $pages Raw decoded pages.
+ * @return string JSON value ready to store.
+ */
+function easycertificate_clean_pages_json(array $pages): string {
+    $clean = [];
+
+    foreach ($pages as $index => $page) {
+        if (!is_object($page)) {
+            continue;
+        }
+
+        $id = clean_param($page->id ?? '', PARAM_ALPHANUMEXT);
+        if ($id === '') {
+            $id = 'p' . ($index + 1);
+        }
+
+        $name = clean_param($page->name ?? '', PARAM_TEXT);
+        if ($name === '') {
+            $name = get_string('defaultpagename', 'easycertificate', $index + 1);
+        }
+
+        $width = max(1, min(5000, (int) ($page->width ?? 1123)));
+        $height = max(1, min(5000, (int) ($page->height ?? 794)));
+
+        $clean[] = (object) [
+            'id' => $id,
+            'name' => $name,
+            'background' => easycertificate_clean_data_uri(
+                $page->background ?? '',
+                '/^data:image\/(png|jpeg|jpg);base64,[A-Za-z0-9+\/=_-]+$/i'
+            ),
+            'width' => $width,
+            'height' => $height,
+        ];
+    }
+
+    if (!$clean) {
+        $clean[] = (object) [
+            'id' => 'p1',
+            'name' => get_string('defaultpagename', 'easycertificate', 1),
+            'background' => '',
+            'width' => 1123,
+            'height' => 794,
+        ];
+    }
+
+    return json_encode($clean, JSON_UNESCAPED_UNICODE);
+}
+
+/**
+ * Cleans and re-encodes template elements.
+ *
+ * @param array $elements Raw decoded elements.
+ * @return string JSON value ready to store.
+ */
+function easycertificate_clean_elements_json(array $elements): string {
+    $clean = [];
+    $types = ['text', 'userfield', 'concat', 'date', 'image', 'signature', 'border'];
+    $aligns = ['L', 'C', 'R', 'J'];
+
+    foreach ($elements as $element) {
+        if (!is_object($element)) {
+            continue;
+        }
+
+        $type = clean_param($element->type ?? 'text', PARAM_ALPHA);
+        if (!in_array($type, $types, true)) {
+            $type = 'text';
+        }
+
+        $item = (object) [
+            'id' => clean_param($element->id ?? uniqid($type . '-', true), PARAM_ALPHANUMEXT),
+            'pageid' => clean_param($element->pageid ?? 'p1', PARAM_ALPHANUMEXT),
+            'type' => $type,
+            'x' => max(-5000, min(5000, (float) ($element->x ?? 0))),
+            'y' => max(-5000, min(5000, (float) ($element->y ?? 0))),
+            'w' => max(1, min(5000, (float) ($element->w ?? 180))),
+            'h' => max(1, min(5000, (float) ($element->h ?? 40))),
+        ];
+
+        if (!empty($element->name)) {
+            $item->name = clean_param($element->name, PARAM_TEXT);
+        }
+
+        if (isset($element->text)) {
+            $item->text = clean_text((string) $element->text, FORMAT_HTML);
+        }
+
+        if (!empty($element->font)) {
+            $item->font = clean_param($element->font, PARAM_ALPHANUMEXT);
+        }
+
+        if (isset($element->size)) {
+            $item->size = max(8, min(200, (int) $element->size));
+        }
+
+        if (!empty($element->color) && preg_match('/^#[0-9a-f]{6}$/i', (string) $element->color)) {
+            $item->color = (string) $element->color;
+        }
+
+        if (!empty($element->align)) {
+            $align = strtoupper(substr(clean_param($element->align, PARAM_ALPHA), 0, 1));
+            $item->align = in_array($align, $aligns, true) ? $align : 'L';
+        }
+
+        if (!empty($element->bold)) {
+            $item->bold = 1;
+        }
+
+        if (!empty($element->italic)) {
+            $item->italic = 1;
+        }
+
+        if (!empty($element->src)) {
+            $item->src = easycertificate_clean_data_uri(
+                $element->src,
+                '/^data:image\/(png|jpeg|jpg);base64,[A-Za-z0-9+\/=_-]+$/i'
+            );
+        }
+
+        if (!empty($element->mask)) {
+            $item->mask = easycertificate_clean_data_uri(
+                $element->mask,
+                '/^data:image\/(png|jpeg|jpg);base64,[A-Za-z0-9+\/=_-]+$/i'
+            );
+        }
+
+        if (!empty($element->cert)) {
+            $item->cert = easycertificate_clean_data_uri(
+                $element->cert,
+                '/^data:[a-z0-9\/\.\-+]*;base64,[A-Za-z0-9+\/=_-]+$/i'
+            );
+        }
+
+        if (isset($element->password)) {
+            $item->password = substr(str_replace("\0", '', (string) $element->password), 0, 255);
+        }
+
+        if (isset($element->naturalw)) {
+            $item->naturalw = max(0, min(10000, (float) $element->naturalw));
+        }
+
+        if (isset($element->naturalh)) {
+            $item->naturalh = max(0, min(10000, (float) $element->naturalh));
+        }
+
+        $clean[] = $item;
+    }
+
+    return json_encode($clean, JSON_UNESCAPED_UNICODE);
+}
+
 require_login();
 
 $context = context_system::instance();
@@ -37,7 +244,7 @@ if (!$template) {
     $defaultpage = [
         (object) [
             'id' => 'p1',
-            'name' => 'Página 1',
+            'name' => get_string('defaultpagename', 'easycertificate', 1),
             'background' => '',
             'width' => 1123,
             'height' => 794,
@@ -48,7 +255,7 @@ if (!$template) {
         'id' => 0,
         'name' => '',
         'description' => '',
-        'pagesjson' => json_encode($defaultpage),
+        'pagesjson' => json_encode($defaultpage, JSON_UNESCAPED_UNICODE),
         'elementsjson' => '[]',
         'format' => 'A4',
         'orientation' => 'L',
@@ -62,8 +269,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = (object) [
         'name' => required_param('name', PARAM_TEXT),
         'description' => optional_param('description', '', PARAM_TEXT),
-        'pagesjson' => required_param('pagesjson', PARAM_RAW),
-        'elementsjson' => required_param('elementsjson', PARAM_RAW),
+        'pagesjson' => easycertificate_clean_pages_json(easycertificate_decode_json_param('pagesjson')),
+        'elementsjson' => easycertificate_clean_elements_json(easycertificate_decode_json_param('elementsjson')),
         'format' => optional_param('format', 'A4', PARAM_ALPHANUMEXT),
         'orientation' => optional_param('orientation', 'L', PARAM_ALPHA),
         'enabled' => optional_param('enabled', 0, PARAM_INT),
@@ -71,14 +278,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'usermodified' => $USER->id,
     ];
 
-    json_decode($data->pagesjson);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        throw new moodle_exception('invalidjson');
-    }
-
-    json_decode($data->elementsjson);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        throw new moodle_exception('invalidjson');
+    if (!in_array($data->orientation, ['L', 'P'], true)) {
+        $data->orientation = 'L';
     }
 
     if ($id) {
@@ -89,14 +290,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = $DB->insert_record('easycertificate_templates', $data);
     }
 
-    redirect(new moodle_url('/mod/easycertificate/edit_template.php', ['id' => $id]), 'Modelo salvo.', 1);
+    redirect(
+        new moodle_url('/mod/easycertificate/edit_template.php', ['id' => $id]),
+        get_string('templatesaved', 'easycertificate'),
+        1
+    );
 }
 
 $PAGE->set_context($context);
 $PAGE->set_url('/mod/easycertificate/edit_template.php', ['id' => $id]);
 $PAGE->set_title(get_string('edittemplate', 'easycertificate'));
 $PAGE->set_heading(get_string('edittemplate', 'easycertificate'));
-$PAGE->requires->css(new moodle_url('/mod/easycertificate/styles.css'));
 $PAGE->requires->js_call_amd('mod_easycertificate/editor', 'init', [[
     'pages' => json_decode($template->pagesjson ?: '[]'),
     'elements' => json_decode($template->elementsjson ?: '[]'),
@@ -105,317 +309,55 @@ $PAGE->requires->js_call_amd('mod_easycertificate/editor', 'init', [[
     'coursefields' => \mod_easycertificate\local\certificate::get_course_fields(),
     'datefields' => \mod_easycertificate\local\certificate::get_date_fields(),
     'previewdata' => \mod_easycertificate\local\certificate::get_preview_user($USER->id),
+    'strings' => [
+        'add' => get_string('add', 'easycertificate'),
+        'backgroundimage' => get_string('backgroundimage', 'easycertificate'),
+        'border' => get_string('border', 'easycertificate'),
+        'customfields' => get_string('customfields', 'easycertificate'),
+        'dates' => get_string('dates', 'easycertificate'),
+        'delete' => get_string('delete', 'easycertificate'),
+        'duplicate' => get_string('duplicate', 'easycertificate'),
+        'edit' => get_string('edit', 'easycertificate'),
+        'noitemsadded' => get_string('noitemsadded', 'easycertificate'),
+        'resize' => get_string('resize', 'easycertificate'),
+        'selectfield' => get_string('selectfield', 'easycertificate'),
+        'coursefields' => get_string('coursefields', 'easycertificate'),
+        'image' => get_string('image', 'easycertificate'),
+        'page' => get_string('page', 'easycertificate'),
+        'remove' => get_string('remove', 'easycertificate'),
+        'removepage' => get_string('removepage', 'easycertificate'),
+        'rename' => get_string('rename', 'easycertificate'),
+        'save' => get_string('save', 'easycertificate'),
+        'signature' => get_string('signature', 'easycertificate'),
+        'text' => get_string('text', 'easycertificate'),
+        'userfields' => get_string('userfields', 'easycertificate'),
+    ],
 ]]);
 
 $editoroptions = [
     'context' => $context,
-    'noclean' => true,
+    'noclean' => false,
     'maxfiles' => 0,
     'maxbytes' => 0,
-    'trusttext' => true,
+    'trusttext' => false,
 ];
 $preferrededitor = editors_get_preferred_editor(FORMAT_HTML);
 $preferrededitor->use_editor('ec-text', array_merge($editoroptions, [
     'autosave' => false,
-    'placeholder' => 'Ex.: {firstname} {lastname} | Emitido em {issuedate}',
+    'placeholder' => get_string('textplaceholder', 'easycertificate'),
 ]));
 
+$templatedata = [
+    'sesskey' => sesskey(),
+    'pagesjson' => $template->pagesjson,
+    'elementsjson' => $template->elementsjson,
+    'name' => $template->name,
+    'description' => $template->description,
+    'orientationportraitselected' => $template->orientation === 'P',
+    'enabled' => !empty($template->enabled),
+    'templatesurl' => (new moodle_url('/mod/easycertificate/templates.php'))->out(false),
+];
+
 echo $OUTPUT->header();
-echo html_writer::start_tag('form', [
-    'method' => 'post',
-    'class' => 'easycertificate-template-form',
-]);
-
-echo html_writer::empty_tag('input', [
-    'type' => 'hidden',
-    'name' => 'sesskey',
-    'value' => sesskey(),
-]);
-
-echo html_writer::empty_tag('input', [
-    'type' => 'hidden',
-    'name' => 'pagesjson',
-    'id' => 'ec-pagesjson',
-    'value' => s($template->pagesjson),
-]);
-
-echo html_writer::empty_tag('input', [
-    'type' => 'hidden',
-    'name' => 'elementsjson',
-    'id' => 'ec-elementsjson',
-    'value' => s($template->elementsjson),
-]);
-
-echo html_writer::start_div('ec-topform card mb-3');
-echo html_writer::start_div('card-body row align-items-end');
-
-echo html_writer::div(
-    '<label>Nome do modelo</label>' .
-    '<input class="form-control" type="text" name="name" required value="' . s($template->name) . '">',
-    'col-md-4'
-);
-
-echo html_writer::div(
-    '<label>Descrição</label>' .
-    '<input class="form-control" type="text" name="description" value="' . s($template->description) . '">',
-    'col-md-4'
-);
-
-echo html_writer::div(
-    '<label>Papel</label>' .
-    '<select class="form-control" name="format"><option value="A4">A4</option></select>',
-    'col-md-1'
-);
-
-$checked = $template->orientation === 'P' ? 'selected' : '';
-echo html_writer::div(
-    '<label>Orientação</label>' .
-    '<select class="form-control" name="orientation">' .
-    '<option value="L">Paisagem</option>' .
-    '<option value="P" ' . $checked . '>Retrato</option>' .
-    '</select>',
-    'col-md-2'
-);
-
-echo html_writer::div(
-    '<label class="d-block">Ativo</label>' .
-    '<input type="checkbox" name="enabled" value="1" ' . ($template->enabled ? 'checked' : '') . '>',
-    'col-md-1'
-);
-
-echo html_writer::end_div();
-echo html_writer::end_div();
-
-echo '<div class="ec-editor">';
-echo '<div class="ec-toolbar card">';
-echo '<div class="card-body">';
-echo '<div class="ec-toolbar-actions">';
-echo '<button type="submit" class="btn btn-primary btn-sm ec-save-btn">';
-echo '<i class="fa fa-save" aria-hidden="true"></i> Salvar';
-echo '</button>';
-echo '<a class="btn btn-secondary btn-sm ec-back-btn" href="templates.php">';
-echo '<i class="fa fa-arrow-left" aria-hidden="true"></i> Voltar';
-echo '</a>';
-echo '<button type="button" class="btn btn-light btn-sm" id="ec-add-page">';
-echo '<i class="fa fa-file-o" aria-hidden="true"></i> Página';
-echo '</button>';
-echo '</div>';
-echo '<hr>';
-echo '<button type="button" class="btn btn-outline-primary btn-sm" data-ec-add="text">';
-echo '<i class="fa fa-font" aria-hidden="true"></i> Texto';
-echo '</button>';
-echo '<button type="button" class="btn btn-outline-primary btn-sm" data-ec-add="userfield">';
-echo '<i class="fa fa-user" aria-hidden="true"></i> Campo de usuário';
-echo '</button>';
-echo '<button type="button" class="btn btn-outline-primary btn-sm" data-ec-add="concat">';
-echo '<i class="fa fa-puzzle-piece" aria-hidden="true"></i> Concatenação';
-echo '</button>';
-echo '<button type="button" class="btn btn-outline-primary btn-sm" data-ec-add="date">';
-echo '<i class="fa fa-calendar" aria-hidden="true"></i> Data';
-echo '</button>';
-echo '<button type="button" class="btn btn-outline-primary btn-sm" data-ec-add="signature">';
-echo '<i class="fas fa-signature" aria-hidden="true"></i> Assinatura digital';
-echo '</button>';
-echo '<button type="button" class="btn btn-outline-primary btn-sm" data-ec-add="image">';
-echo '<i class="fa fa-image" aria-hidden="true"></i> Imagem';
-echo '</button>';
-echo '<hr>';
-echo '<div class="btn-group">';
-echo '<button type="button" class="btn btn-secondary btn-sm" id="ec-zoom-out">';
-echo '<i class="fa fa-search-minus" aria-hidden="true"></i> Zoom -';
-echo '</button>';
-echo '<button type="button" class="btn btn-secondary btn-sm" id="ec-zoom-label">100%</button>';
-echo '<button type="button" class="btn btn-secondary btn-sm" id="ec-zoom-in">';
-echo '<i class="fa fa-search-plus" aria-hidden="true"></i> Zoom +';
-echo '</button>';
-echo '</div>';
-echo '<hr>';
-echo '<div id="ec-pages-tabs" class="ec-pages-tabs"></div>';
-echo '</div>';
-echo '</div>';
-echo '<div class="ec-workarea">';
-echo '<div id="ec-stage-wrap" class="ec-stage-wrap">';
-echo '<div id="ec-guide-x" class="ec-guide ec-guide-x"></div>';
-echo '<div id="ec-guide-y" class="ec-guide ec-guide-y"></div>';
-echo '<div id="ec-stage" class="ec-stage"></div>';
-echo '</div>';
-echo '</div>';
-echo '<div class="ec-items-panel card">';
-echo '<div class="card-body">';
-echo '<div class="ec-items-title">Itens adicionados</div>';
-echo '<div id="ec-items-list" class="ec-items-list"></div>';
-echo '</div>';
-echo '</div>';
-echo '</div>';
-
-echo html_writer::end_tag('form');
-
-echo '<div class="modal fade" id="ec-field-modal" tabindex="-1" aria-hidden="true">';
-echo '<div class="modal-dialog modal-lg"><div class="modal-content">';
-echo '<div class="modal-header">';
-echo '<h5 class="modal-title">Campo</h5>';
-echo '<button type="button" class="close btn-close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Fechar">';
-echo '<span aria-hidden="true">&times;</span>';
-echo '</button>';
-echo '</div>';
-echo '<div class="modal-body">';
-echo '<input type="hidden" id="ec-modal-type">';
-echo '<div class="form-group ec-userfield-row">';
-echo '<label>Campos de Usuário</label>';
-echo '<select id="ec-userfield-select" class="form-control"></select>';
-echo '</div>';
-echo '<div class="form-group ec-customfield-row">';
-echo '<label>Campo customizado</label>';
-echo '<input id="ec-customfield" class="form-control">';
-echo '</div>';
-echo '<div class="form-group ec-datefield-row">';
-echo '<label>Tipo de data</label>';
-echo '<select id="ec-datefield-select" class="form-control"></select>';
-echo '</div>';
-echo '<div class="form-group ec-concatfield-row">';
-echo '<label>Inserir campo na concatenação</label>';
-echo '<select id="ec-concatfield-select" class="form-control"></select>';
-echo '</div>';
-echo '<div class="alert alert-info ec-help-box">';
-echo '<button type="button" class="btn btn-link btn-sm p-0 ec-info-toggle">';
-echo '<i class="fa fa-info-circle" aria-hidden="true"></i> Como usar';
-echo '</button>';
-echo '<div class="ec-info-content mt-2">';
-echo 'Use campos entre chaves. Exemplos: ';
-echo '<code>{firstname} {lastname}</code>, <code>{issuedate}</code>, <code>{course}</code>.<br>';
-echo 'Para concatenação, digite texto livre junto com os campos: ';
-echo '<code>Certificamos que {firstname} concluiu {course} em {issuedate}</code>.';
-echo '</div>';
-echo '</div>';
-echo '<div class="form-group">';
-echo '<label>Texto / concatenação</label>';
-echo '<textarea id="ec-text" name="ec_text_buffer" class="form-control ec-html-field" rows="8" ';
-echo 'placeholder="Ex.: {firstname} {lastname} | {course} | {issuedate}"></textarea>';
-echo '</div>';
-echo '<div class="row ec-inline-style-row">';
-echo '<div class="col-md-6">';
-echo '<label>Tamanho do texto selecionado</label>';
-echo '<div class="input-group ec-style-control">';
-echo '<div class="input-group-prepend">';
-echo '<span class="input-group-text" title="Tamanho">';
-echo '<i class="fa fa-text-height" aria-hidden="true"></i>';
-echo '</span>';
-echo '</div>';
-echo '<input id="ec-size" type="number" class="form-control" value="24" min="8">';
-echo '</div>';
-echo '</div>';
-echo '<div class="col-md-6">';
-echo '<label>Cor do texto selecionado</label>';
-echo '<div class="input-group ec-style-control ec-color-control">';
-echo '<div class="input-group-prepend">';
-echo '<span class="input-group-text" title="Cor">';
-echo '<i class="fa fa-paint-brush" aria-hidden="true"></i>';
-echo '</span>';
-echo '</div>';
-echo '<input id="ec-color" type="color" class="form-control" value="#111111">';
-echo '</div>';
-echo '</div>';
-echo '</div>';
-echo '</div>';
-echo '<div class="modal-footer">';
-echo '<button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">Cancelar</button>';
-echo '<button type="button" id="ec-field-save" class="btn btn-primary">Adicionar</button>';
-echo '</div>';
-echo '</div></div>';
-echo '</div>';
-
-echo '<div class="modal fade" id="ec-image-modal" tabindex="-1" aria-hidden="true">';
-echo '<div class="modal-dialog"><div class="modal-content">';
-echo '<div class="modal-header">';
-echo '<h5 class="modal-title">Imagem</h5>';
-echo '<button type="button" class="close btn-close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Fechar">';
-echo '<span aria-hidden="true">&times;</span>';
-echo '</button>';
-echo '</div>';
-echo '<div class="modal-body">';
-echo '<div class="form-group">';
-echo '<label>Arquivo</label>';
-echo '<input id="ec-image-file" type="file" class="form-control" accept="image/png,image/jpeg">';
-echo '</div>';
-echo '<label><input id="ec-image-bg" type="checkbox"> Usar como imagem de fundo</label>';
-echo '</div>';
-echo '<div class="modal-footer">';
-echo '<button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">Cancelar</button>';
-echo '<button type="button" id="ec-image-save" class="btn btn-primary">Adicionar</button>';
-echo '</div>';
-echo '</div></div>';
-echo '</div>';
-
-echo '<div class="modal fade" id="ec-signature-modal" tabindex="-1" aria-hidden="true">';
-echo '<div class="modal-dialog"><div class="modal-content">';
-echo '<div class="modal-header">';
-echo '<h5 class="modal-title">Assinatura digital</h5>';
-echo '<button type="button" class="close btn-close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Fechar">';
-echo '<span aria-hidden="true">&times;</span>';
-echo '</button>';
-echo '</div>';
-echo '<div class="modal-body">';
-echo '<div class="alert alert-info ec-help-box">';
-echo 'Informe um certificado PFX/P12 e a senha para assinar o PDF. ';
-echo 'A máscara é obrigatória e será exibida visualmente no certificado.';
-echo '</div>';
-echo '<div class="form-group">';
-echo '<label>Certificado digital (.pfx ou .p12)</label>';
-echo '<input id="ec-signature-cert" type="file" class="form-control" ';
-echo 'accept=".pfx,.p12,application/x-pkcs12">';
-echo '</div>';
-echo '<div class="form-group">';
-echo '<label>Senha do certificado</label>';
-echo '<input id="ec-signature-password" type="password" class="form-control" autocomplete="new-password">';
-echo '</div>';
-echo '<div class="form-group">';
-echo '<label>Máscara visual da assinatura</label>';
-echo '<input id="ec-signature-mask" type="file" class="form-control" ';
-echo 'accept="image/png,image/jpeg" data-required="1">';
-echo '</div>';
-echo '<div id="ec-signature-mask-error" class="alert alert-danger ec-signature-error" role="alert">';
-echo 'Informe a máscara visual da assinatura.';
-echo '</div>';
-echo '</div>';
-echo '<div class="modal-footer">';
-echo '<button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">Cancelar</button>';
-echo '<button type="button" id="ec-signature-save" class="btn btn-primary">Adicionar</button>';
-echo '</div>';
-echo '</div></div>';
-echo '</div>';
-
-echo '<div class="modal fade" id="ec-rename-modal" tabindex="-1" aria-hidden="true">';
-echo '<div class="modal-dialog"><div class="modal-content">';
-echo '<div class="modal-header">';
-echo '<h5 class="modal-title">Renomear item</h5>';
-echo '<button type="button" class="close btn-close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Fechar">';
-echo '<span aria-hidden="true">&times;</span>';
-echo '</button>';
-echo '</div>';
-echo '<div class="modal-body">';
-echo '<input type="hidden" id="ec-rename-id">';
-echo '<div class="form-group">';
-echo '<label>Nome do item</label>';
-echo '<input id="ec-rename-name" type="text" class="form-control" autocomplete="off">';
-echo '</div>';
-echo '</div>';
-echo '<div class="modal-footer">';
-echo '<button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">Cancelar</button>';
-echo '<button type="button" id="ec-rename-save" class="btn btn-primary">Salvar</button>';
-echo '</div>';
-echo '</div></div>';
-echo '</div>';
-
-echo '<div class="modal fade" id="ec-preview-modal" tabindex="-1" aria-hidden="true">';
-echo '<div class="modal-dialog modal-xl"><div class="modal-content">';
-echo '<div class="modal-header">';
-echo '<h5 class="modal-title">Preview do modelo</h5>';
-echo '<button type="button" class="close btn-close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Fechar">';
-echo '<span aria-hidden="true">&times;</span>';
-echo '</button>';
-echo '</div>';
-echo '<div class="modal-body"><div id="ec-preview-body" class="ec-preview-body"></div></div>';
-echo '</div></div>';
-echo '</div>';
-
+echo $OUTPUT->render_from_template('mod_easycertificate/editor', $templatedata);
 echo $OUTPUT->footer();

@@ -62,7 +62,7 @@ if ($action === 'duplicate' && $id && confirm_sesskey()) {
     $record = $DB->get_record('easycertificate_templates', ['id' => $id], '*', MUST_EXIST);
     unset($record->id);
 
-    $record->name .= ' - cópia';
+    $record->name = get_string('templatecopyname', 'easycertificate', $record->name);
     $record->timecreated = time();
     $record->timemodified = time();
     $record->usermodified = $USER->id;
@@ -83,7 +83,12 @@ echo html_writer::link(
 );
 
 $table = new html_table();
-$table->head = ['Modelo', 'Status', 'Atualizado em', 'Ações'];
+$table->head = [
+    get_string('template', 'easycertificate'),
+    get_string('status', 'easycertificate'),
+    get_string('timemodified', 'easycertificate'),
+    get_string('actions'),
+];
 
 foreach ($templates as $template) {
     $editurl = new moodle_url('/mod/easycertificate/edit_template.php', [
@@ -104,22 +109,22 @@ foreach ($templates as $template) {
 
     $editlink = html_writer::link(
         $editurl,
-        'Editar',
+        get_string('edit', 'easycertificate'),
         ['class' => 'btn btn-sm btn-secondary mr-1']
     );
 
     $duplicatelink = html_writer::link(
         $duplicateurl,
-        'Duplicar',
+        get_string('duplicate', 'easycertificate'),
         ['class' => 'btn btn-sm btn-outline-secondary mr-1']
     );
 
     $deletelink = html_writer::link(
         $deleteurl,
-        'Excluir',
+        get_string('delete'),
         [
             'class' => 'btn btn-sm btn-outline-danger',
-            'onclick' => "return confirm('Excluir este modelo?')",
+            'onclick' => 'return confirm(' . json_encode(get_string('deleteconfirm', 'easycertificate')) . ')',
         ]
     );
 
@@ -127,7 +132,7 @@ foreach ($templates as $template) {
 
     $table->data[] = [
         format_string($template->name),
-        $template->enabled ? 'Ativo' : 'Inativo',
+        $template->enabled ? get_string('active', 'easycertificate') : get_string('inactive', 'easycertificate'),
         userdate($template->timemodified),
         $actions,
     ];

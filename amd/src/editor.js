@@ -1,3 +1,26 @@
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * Visual template editor behaviour for the Easy Certificate activity module.
+ *
+ * @module     mod_easycertificate/editor
+ * @copyright  2026 Marcelo M. Almeida Júnior
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 define(['jquery'], function($) {
     const state = {
         pages: [],
@@ -11,6 +34,10 @@ define(['jquery'], function($) {
     };
 
     const pageSize = {w: 1123, h: 794};
+
+    function str(key) {
+        return state.config && state.config.strings && state.config.strings[key] ? state.config.strings[key] : key;
+    }
 
     function uid(prefix) {
         return prefix + '-' + Date.now() + '-' + Math.floor(Math.random() * 100000);
@@ -76,13 +103,13 @@ define(['jquery'], function($) {
             const item = $('<span class="ec-page-tab-item mb-1"></span>').appendTo(tabs);
             $('<button type="button" class="btn btn-sm ec-page-tab"></button>')
                 .addClass(page.id === state.currentPage ? 'btn-primary' : 'btn-outline-secondary')
-                .text(page.name || ('Página ' + (index + 1)))
+                .text(page.name || (str('page') + ' ' + (index + 1)))
                 .on('click', function() {
                     state.currentPage = page.id;
                     render();
                 })
                 .appendTo(item);
-            $('<button type="button" class="btn btn-sm btn-outline-danger ec-page-remove" title="Remover página" aria-label="Remover página"><i class="fa fa-trash" aria-hidden="true"></i></button>')
+            $('<button type="button" class="btn btn-sm btn-outline-danger ec-page-remove" title="' + str('removepage') + '" aria-label="' + str('removepage') + '"><i class="fa fa-trash" aria-hidden="true"></i></button>')
                 .prop('disabled', state.pages.length <= 1)
                 .on('click', function(ev) {
                     ev.preventDefault();
@@ -97,7 +124,7 @@ define(['jquery'], function($) {
 
     function getSignatureName(element) {
         const current = String(element.name || '').trim();
-        if (current && !/^Assinatura\s+\d+$/i.test(current)) {
+        if (current && !new RegExp('^' + str('signature') + '\\s+\\d+$', 'i').test(current)) {
             return current;
         }
         const signatures = state.elements.filter(function(item) {
@@ -106,7 +133,7 @@ define(['jquery'], function($) {
         const index = signatures.findIndex(function(item) {
             return item.id === element.id;
         });
-        return 'Assinatura ' + (index >= 0 ? index + 1 : signatures.length + 1);
+        return str('signature') + ' ' + (index >= 0 ? index + 1 : signatures.length + 1);
     }
 
     function normalizeSignatureNames() {
@@ -118,8 +145,8 @@ define(['jquery'], function($) {
             const pageid = element.pageid || state.currentPage;
             counters[pageid] = (counters[pageid] || 0) + 1;
             const current = String(element.name || '').trim();
-            if (!current || /^Assinatura\s+\d+$/i.test(current)) {
-                element.name = 'Assinatura ' + counters[pageid];
+            if (!current || new RegExp('^' + str('signature') + '\\s+\\d+$', 'i').test(current)) {
+                element.name = str('signature') + ' ' + counters[pageid];
             }
         });
     }
@@ -135,13 +162,13 @@ define(['jquery'], function($) {
             return getSignatureName(element);
         }
         if (element.type === 'image') {
-            return 'Imagem';
+            return str('image');
         }
         if (element.type === 'border') {
-            return 'Borda';
+            return str('border');
         }
         const clean = $('<div>').html(element.text || '').text().trim();
-        return clean || 'Texto';
+        return clean || str('text');
     }
 
     function elementIcon(element) {
@@ -209,25 +236,25 @@ define(['jquery'], function($) {
                     textAlign: mapAlign(element.align || 'L')
                 }).html(resolveText(element.text));
             }
-            $('<button type="button" class="ec-element-edit" title="Editar"><i class="fa fa-pencil" aria-hidden="true"></i></button>').on('click', function(ev) {
+            $('<button type="button" class="ec-element-edit" title="' + str('edit') + '"><i class="fa fa-pencil" aria-hidden="true"></i></button>').on('click', function(ev) {
                 ev.preventDefault();
                 ev.stopPropagation();
                 state.selectedId = element.id;
                 openEdit(element.id);
             }).appendTo(item);
             if (element.type !== 'signature') {
-                $('<button type="button" class="ec-element-duplicate" title="Duplicar"><i class="fa fa-files-o" aria-hidden="true"></i></button>').on('click', function(ev) {
+                $('<button type="button" class="ec-element-duplicate" title="' + str('duplicate') + '"><i class="fa fa-files-o" aria-hidden="true"></i></button>').on('click', function(ev) {
                     ev.preventDefault();
                     ev.stopPropagation();
                     duplicateElement(element.id);
                 }).appendTo(item);
             }
-            $('<button type="button" class="ec-element-delete" title="Excluir"><i class="fa fa-trash" aria-hidden="true"></i></button>').on('click', function(ev) {
+            $('<button type="button" class="ec-element-delete" title="' + str('delete') + '"><i class="fa fa-trash" aria-hidden="true"></i></button>').on('click', function(ev) {
                 ev.preventDefault();
                 ev.stopPropagation();
                 removeElement(element.id);
             }).appendTo(item);
-            $('<span class="ec-resize-handle" title="Redimensionar"></span>').appendTo(item);
+            $('<span class="ec-resize-handle" title="' + str('resize') + '"></span>').appendTo(item);
             makeInteractive(item[0]);
             item.on('click', function(ev) {
                 ev.stopPropagation();
@@ -259,11 +286,11 @@ define(['jquery'], function($) {
         if (page.background) {
             const bgrow = $('<div class="ec-item-row ec-item-background"></div>').appendTo(panel);
             $('<span class="ec-item-move"><i class="fa fa-file-image-o" aria-hidden="true"></i></span>').appendTo(bgrow);
-            $('<span class="ec-item-title"></span>').text('Imagem de fundo').appendTo(bgrow);
-            $('<button type="button" class="ec-item-action" title="Editar"><i class="fa fa-pencil" aria-hidden="true"></i></button>').on('click', function() {
+            $('<span class="ec-item-title"></span>').text(str('backgroundimage')).appendTo(bgrow);
+            $('<button type="button" class="ec-item-action" title="' + str('edit') + '"><i class="fa fa-pencil" aria-hidden="true"></i></button>').on('click', function() {
                 openBackgroundEdit();
             }).appendTo(bgrow);
-            $('<button type="button" class="ec-item-action" title="Remover"><i class="fa fa-trash" aria-hidden="true"></i></button>').on('click', function() {
+            $('<button type="button" class="ec-item-action" title="' + str('remove') + '"><i class="fa fa-trash" aria-hidden="true"></i></button>').on('click', function() {
                 page.background = '';
                 syncHidden();
                 render();
@@ -271,7 +298,7 @@ define(['jquery'], function($) {
         }
         const items = state.elements.filter(e => e.pageid === page.id);
         if (!page.background && !items.length) {
-            $('<div class="ec-items-empty">Nenhum item adicionado.</div>').appendTo(panel);
+            $('<div class="ec-items-empty"></div>').text(str('noitemsadded')).appendTo(panel);
             return;
         }
         items.forEach(function(element) {
@@ -282,21 +309,21 @@ define(['jquery'], function($) {
                 ev.preventDefault();
                 renameElement(element.id);
             }).appendTo(row);
-            $('<button type="button" class="ec-item-action" title="Renomear"><i class="fa fa-pencil" aria-hidden="true"></i></button>').on('click', function(ev) {
+            $('<button type="button" class="ec-item-action" title="' + str('rename') + '"><i class="fa fa-pencil" aria-hidden="true"></i></button>').on('click', function(ev) {
                 ev.preventDefault();
                 renameElement(element.id);
             }).appendTo(row);
             if (element.type !== 'signature') {
-                $('<button type="button" class="ec-item-action" title="Duplicar"><i class="fa fa-files-o" aria-hidden="true"></i></button>').on('click', function(ev) {
+                $('<button type="button" class="ec-item-action" title="' + str('duplicate') + '"><i class="fa fa-files-o" aria-hidden="true"></i></button>').on('click', function(ev) {
                     ev.preventDefault();
                     duplicateElement(element.id);
                 }).appendTo(row);
             }
-            $('<button type="button" class="ec-item-action" title="Editar"><i class="fa fa-cog" aria-hidden="true"></i></button>').on('click', function(ev) {
+            $('<button type="button" class="ec-item-action" title="' + str('edit') + '"><i class="fa fa-cog" aria-hidden="true"></i></button>').on('click', function(ev) {
                 ev.preventDefault();
                 openEdit(element.id);
             }).appendTo(row);
-            $('<button type="button" class="ec-item-action" title="Remover"><i class="fa fa-trash" aria-hidden="true"></i></button>').on('click', function(ev) {
+            $('<button type="button" class="ec-item-action" title="' + str('remove') + '"><i class="fa fa-trash" aria-hidden="true"></i></button>').on('click', function(ev) {
                 ev.preventDefault();
                 removeElement(element.id);
             }).appendTo(row);
@@ -389,7 +416,7 @@ define(['jquery'], function($) {
         state.editId = null;
         $('#ec-image-file').val('');
         $('#ec-image-bg').prop('checked', true).prop('disabled', true);
-        $('#ec-image-save').text('Salvar');
+        $('#ec-image-save').text(str('save'));
         showModal('#ec-image-modal');
     }
 
@@ -556,24 +583,24 @@ define(['jquery'], function($) {
 
     function fillSelects() {
         const userselect = $('#ec-userfield-select').empty();
-        $('<option></option>').val('').text('Selecionar campo').appendTo(userselect);
-        addSelectOptions(userselect, state.config.userfields || {}, 'Campos de usuário');
+        $('<option></option>').val('').text(str('selectfield')).appendTo(userselect);
+        addSelectOptions(userselect, state.config.userfields || {}, str('userfields'));
         if (Object.keys(state.config.customfields || {}).length) {
-            addSelectOptions(userselect, state.config.customfields || {}, 'Campos customizados');
+            addSelectOptions(userselect, state.config.customfields || {}, str('customfields'));
         }
 
         const dateselect = $('#ec-datefield-select').empty();
-        addSelectOptions(dateselect, state.config.datefields || {}, 'Datas');
+        addSelectOptions(dateselect, state.config.datefields || {}, str('dates'));
         dateselect.val('currentdate');
 
         const concatselect = $('#ec-concatfield-select').empty();
-        $('<option></option>').val('').text('Selecionar campo').appendTo(concatselect);
-        addSelectOptions(concatselect, state.config.userfields || {}, 'Campos de usuário');
+        $('<option></option>').val('').text(str('selectfield')).appendTo(concatselect);
+        addSelectOptions(concatselect, state.config.userfields || {}, str('userfields'));
         if (Object.keys(state.config.customfields || {}).length) {
-            addSelectOptions(concatselect, state.config.customfields || {}, 'Campos customizados');
+            addSelectOptions(concatselect, state.config.customfields || {}, str('customfields'));
         }
-        addSelectOptions(concatselect, state.config.coursefields || {}, 'Campos do curso');
-        addSelectOptions(concatselect, state.config.datefields || {}, 'Datas');
+        addSelectOptions(concatselect, state.config.coursefields || {}, str('coursefields'));
+        addSelectOptions(concatselect, state.config.datefields || {}, str('dates'));
     }
 
     function openField(type) {
@@ -588,7 +615,7 @@ define(['jquery'], function($) {
         $('.ec-customfield-row').toggle(type === 'userfield');
         $('.ec-datefield-row').toggle(type === 'date');
         $('.ec-concatfield-row').toggle(type === 'concat');
-        $('#ec-field-save').text('Adicionar');
+        $('#ec-field-save').text(str('add'));
         showModal('#ec-field-modal');
     }
 
@@ -603,7 +630,7 @@ define(['jquery'], function($) {
         $('#ec-size').val(element.size || 24);
         $('#ec-color').val(element.color || '#111111');
         $('.ec-userfield-row,.ec-customfield-row,.ec-datefield-row,.ec-concatfield-row').hide();
-        $('#ec-field-save').text('Salvar');
+        $('#ec-field-save').text(str('save'));
         showModal('#ec-field-modal');
     }
 
@@ -643,7 +670,7 @@ define(['jquery'], function($) {
         state.editId = id || null;
         $('#ec-image-file').val('');
         $('#ec-image-bg').prop('disabled', false).prop('checked', false);
-        $('#ec-image-save').text(state.editId ? 'Salvar' : 'Adicionar');
+        $('#ec-image-save').text(state.editId ? str('save') : str('add'));
         showModal('#ec-image-modal');
     }
 
@@ -674,7 +701,7 @@ define(['jquery'], function($) {
                 }
                 state.editId = null;
                 $('#ec-image-bg').prop('disabled', false);
-                $('#ec-image-save').text('Adicionar');
+                $('#ec-image-save').text(str('add'));
                 hideModal('#ec-image-modal');
                 render();
             };
@@ -703,7 +730,7 @@ define(['jquery'], function($) {
         $('#ec-signature-cert,#ec-signature-mask').val('');
         $('#ec-signature-password').val('');
         $('#ec-signature-mask-error').hide();
-        $('#ec-signature-save').text(element ? 'Salvar' : 'Adicionar');
+        $('#ec-signature-save').text(element ? str('save') : str('add'));
         showModal('#ec-signature-modal');
     }
 
@@ -733,10 +760,10 @@ define(['jquery'], function($) {
                         current.src = maskdata;
                     }
                 } else {
-                    state.elements.push({id: uid('sig'), pageid: state.currentPage, type: 'signature', name: 'Assinatura ' + (state.elements.filter(function(item) { return item.type === 'signature' && item.pageid === state.currentPage; }).length + 1), cert: certdata, password: $('#ec-signature-password').val() || '', mask: maskdata, src: maskdata, x: 80, y: 80, w: 260, h: 90});
+                    state.elements.push({id: uid('sig'), pageid: state.currentPage, type: 'signature', name: str('signature') + ' ' + (state.elements.filter(function(item) { return item.type === 'signature' && item.pageid === state.currentPage; }).length + 1), cert: certdata, password: $('#ec-signature-password').val() || '', mask: maskdata, src: maskdata, x: 80, y: 80, w: 260, h: 90});
                 }
                 state.signatureEditId = null;
-                $('#ec-signature-save').text('Adicionar');
+                $('#ec-signature-save').text(str('add'));
                 hideModal('#ec-signature-modal');
                 render();
             });
@@ -820,7 +847,7 @@ define(['jquery'], function($) {
 
     function addPage() {
         const num = state.pages.length + 1;
-        const page = {id: uid('p'), name: 'Página ' + num, background: '', width: pageSize.w, height: pageSize.h};
+        const page = {id: uid('p'), name: str('page') + ' ' + num, background: '', width: pageSize.w, height: pageSize.h};
         state.pages.push(page);
         state.currentPage = page.id;
         render();
@@ -939,7 +966,7 @@ define(['jquery'], function($) {
     return {
         init: function(config) {
             state.config = config || {};
-            state.pages = Array.isArray(config.pages) && config.pages.length ? config.pages : [{id: 'p1', name: 'Página 1', background: '', width: pageSize.w, height: pageSize.h}];
+            state.pages = Array.isArray(config.pages) && config.pages.length ? config.pages : [{id: 'p1', name: str('page') + ' 1', background: '', width: pageSize.w, height: pageSize.h}];
             state.elements = Array.isArray(config.elements) ? config.elements : [];
             state.currentPage = state.pages[0].id;
             fillSelects();

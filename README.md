@@ -117,7 +117,7 @@ The plugin stores certificate issue records required for certificate validation 
 
 Implements:
 
-- `\core_privacy\local\metadata\null_provider`
+- Privacy metadata, export and delete API for `easycertificate_issues`
 
 ---
 
@@ -134,7 +134,7 @@ Implements:
 Current release:
 
 ```text
-1.0.1
+1.0.2
 ```
 
 ---

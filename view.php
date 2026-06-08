@@ -41,13 +41,22 @@ require_login($course, true, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/easycertificate:view', $context);
 
+$event = \mod_easycertificate\event\course_module_viewed::create([
+    'objectid' => $certificate->id,
+    'context' => $context,
+]);
+$event->add_record_snapshot('course', $course);
+$event->add_record_snapshot('course_modules', $cm);
+$event->add_record_snapshot('easycertificate', $certificate);
+$event->trigger();
+
 if (!$template) {
     $PAGE->set_url('/mod/easycertificate/view.php', ['id' => $id]);
     $PAGE->set_title(format_string($certificate->name));
     $PAGE->set_heading(format_string($course->fullname));
 
     echo $OUTPUT->header();
-    echo $OUTPUT->notification('Nenhum modelo ativo foi vinculado a esta atividade.', 'warning');
+    echo $OUTPUT->notification(get_string('notemplateassigned', 'easycertificate'), 'warning');
     echo $OUTPUT->footer();
     exit;
 }
@@ -79,7 +88,7 @@ echo html_writer::link(
         'id' => $id,
         'preview' => 1,
     ]),
-    '<i class="fa fa-eye" aria-hidden="true"></i> Visualizar certificado',
+    '<i class="fa fa-eye" aria-hidden="true"></i> ' . get_string('viewcertificate', 'easycertificate'),
     [
         'class' => 'btn btn-secondary mr-2',
         'target' => '_blank',

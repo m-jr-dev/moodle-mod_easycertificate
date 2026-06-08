@@ -40,26 +40,26 @@ class certificate {
      */
     public static function get_user_fields(): array {
         return [
-            'id' => 'ID',
-            'username' => 'Username',
-            'firstname' => 'Nome',
-            'lastname' => 'Sobrenome',
-            'firstnamephonetic' => 'Nome fonético',
-            'lastnamephonetic' => 'Sobrenome fonético',
-            'middlename' => 'Nome do meio',
-            'alternatename' => 'Nome alternativo',
-            'email' => 'E-mail',
-            'phone1' => 'Telefone 1',
-            'phone2' => 'Telefone 2',
-            'institution' => 'Instituição',
-            'department' => 'Departamento',
-            'address' => 'Endereço',
-            'city' => 'Cidade',
-            'country' => 'País',
-            'lang' => 'Idioma',
-            'timezone' => 'Fuso horário',
-            'description' => 'Descrição',
-            'idnumber' => 'Número de identificação',
+            'id' => get_string('userfield_id', 'easycertificate'),
+            'username' => get_string('userfield_username', 'easycertificate'),
+            'firstname' => get_string('userfield_firstname', 'easycertificate'),
+            'lastname' => get_string('userfield_lastname', 'easycertificate'),
+            'firstnamephonetic' => get_string('userfield_firstnamephonetic', 'easycertificate'),
+            'lastnamephonetic' => get_string('userfield_lastnamephonetic', 'easycertificate'),
+            'middlename' => get_string('userfield_middlename', 'easycertificate'),
+            'alternatename' => get_string('userfield_alternatename', 'easycertificate'),
+            'email' => get_string('userfield_email', 'easycertificate'),
+            'phone1' => get_string('userfield_phone1', 'easycertificate'),
+            'phone2' => get_string('userfield_phone2', 'easycertificate'),
+            'institution' => get_string('userfield_institution', 'easycertificate'),
+            'department' => get_string('userfield_department', 'easycertificate'),
+            'address' => get_string('userfield_address', 'easycertificate'),
+            'city' => get_string('userfield_city', 'easycertificate'),
+            'country' => get_string('userfield_country', 'easycertificate'),
+            'lang' => get_string('userfield_lang', 'easycertificate'),
+            'timezone' => get_string('userfield_timezone', 'easycertificate'),
+            'description' => get_string('userfield_description', 'easycertificate'),
+            'idnumber' => get_string('userfield_idnumber', 'easycertificate'),
         ];
     }
 
@@ -70,10 +70,10 @@ class certificate {
      */
     public static function get_course_fields(): array {
         return [
-            'course' => 'Nome completo do curso',
-            'courseshortname' => 'Nome breve do curso',
-            'courseidnumber' => 'Número de identificação do curso',
-            'coursecategory' => 'Categoria do curso',
+            'course' => get_string('coursefield_course', 'easycertificate'),
+            'courseshortname' => get_string('coursefield_courseshortname', 'easycertificate'),
+            'courseidnumber' => get_string('coursefield_courseidnumber', 'easycertificate'),
+            'coursecategory' => get_string('coursefield_coursecategory', 'easycertificate'),
         ];
     }
 
@@ -84,9 +84,15 @@ class certificate {
      */
     public static function get_date_fields(): array {
         return [
-            'currentdate' => 'Data atual do dia',
-            'issuedate' => 'Data de emissão do certificado',
-            'completiondate' => 'Data de conclusão do curso',
+            'currentdate' => get_string('datefield_currentdate', 'easycertificate'),
+            'currentdate_numeric' => get_string('datefield_currentdate_numeric', 'easycertificate'),
+            'currentdate_long' => get_string('datefield_currentdate_long', 'easycertificate'),
+            'issuedate' => get_string('datefield_issuedate', 'easycertificate'),
+            'issuedate_numeric' => get_string('datefield_issuedate_numeric', 'easycertificate'),
+            'issuedate_long' => get_string('datefield_issuedate_long', 'easycertificate'),
+            'completiondate' => get_string('datefield_completiondate', 'easycertificate'),
+            'completiondate_numeric' => get_string('datefield_completiondate_numeric', 'easycertificate'),
+            'completiondate_long' => get_string('datefield_completiondate_long', 'easycertificate'),
         ];
     }
 
@@ -136,10 +142,18 @@ class certificate {
             }
         }
 
-        $data['date'] = userdate(time(), get_string('strftimedatefullshort'));
+        $now = time();
+
+        $data['date'] = userdate($now, get_string('strftimedatefullshort'));
         $data['currentdate'] = $data['date'];
+        $data['currentdate_numeric'] = self::format_date_numeric($now);
+        $data['currentdate_long'] = self::format_date_long($now);
         $data['issuedate'] = $data['date'];
+        $data['issuedate_numeric'] = self::format_date_numeric($now);
+        $data['issuedate_long'] = self::format_date_long($now);
         $data['completiondate'] = '';
+        $data['completiondate_numeric'] = '';
+        $data['completiondate_long'] = '';
 
         return $data;
     }
@@ -191,6 +205,8 @@ class certificate {
                     $completion->timecompleted,
                     get_string('strftimedatefullshort')
                 );
+                $values['completiondate_numeric'] = self::format_date_numeric((int) $completion->timecompleted);
+                $values['completiondate_long'] = self::format_date_long((int) $completion->timecompleted);
             }
         }
 
@@ -203,6 +219,36 @@ class certificate {
             },
             $text
         );
+    }
+
+    /**
+     * Formats a date as numeric date.
+     *
+     * @param int $timestamp Timestamp.
+     * @return string
+     */
+    private static function format_date_numeric(int $timestamp): string {
+        return userdate($timestamp, get_string('dateformat_numeric', 'easycertificate'));
+    }
+
+    /**
+     * Formats a date as long date.
+     *
+     * @param int $timestamp Timestamp.
+     * @return string
+     */
+    private static function format_date_long(int $timestamp): string {
+        $date = userdate($timestamp, get_string('dateformat_long', 'easycertificate'));
+
+        $formatted = preg_replace_callback(
+            '/^(\d{1,2}\s+de\s+)(\p{L})(\p{L}*)/u',
+            static function (array $matches): string {
+                return $matches[1] . \core_text::strtoupper($matches[2]) . $matches[3];
+            },
+            $date
+        );
+
+        return $formatted ?? $date;
     }
 
     /**
@@ -461,7 +507,7 @@ class certificate {
             $pagecontent = self::set_pdf_page_annots($pagecontent, $fieldobject . ' 0 R');
         }
 
-        $fieldname = self::escape_pdf_string('Assinatura ' . $index);
+        $fieldname = self::escape_pdf_string(get_string('signature', 'easycertificate') . ' ' . $index);
         $date = gmdate('YmdHis');
         $placeholderbytes = 24000;
         $placeholderhex = str_repeat('0', $placeholderbytes * 2);

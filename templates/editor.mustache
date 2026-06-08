@@ -1,0 +1,302 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_easycertificate/editor
+
+    Visual editor markup for the Easy Certificate template manager.
+
+    Context variables required for this template:
+    * sesskey - current session key
+    * pagesjson - encoded page data
+    * elementsjson - encoded element data
+    * name - template name
+    * description - template description
+    * orientationportraitselected - portrait option selected state
+    * enabled - enabled checkbox state
+    * templatesurl - template manager URL
+
+    Example context (json):
+    {
+        "sesskey": "abc123",
+        "pagesjson": "[]",
+        "elementsjson": "[]",
+        "name": "Template",
+        "description": "Description",
+        "orientationportraitselected": false,
+        "enabled": true,
+        "templatesurl": "/mod/easycertificate/templates.php"
+    }
+}}
+<form method="post" class="easycertificate-template-form">
+    <input type="hidden" name="sesskey" value="{{sesskey}}">
+    <input type="hidden" name="pagesjson" id="ec-pagesjson" value="{{pagesjson}}">
+    <input type="hidden" name="elementsjson" id="ec-elementsjson" value="{{elementsjson}}">
+
+    <div class="ec-topform card mb-3">
+        <div class="card-body row align-items-end">
+            <div class="col-md-4">
+                <label for="ec-template-name">{{#str}} templatename, easycertificate {{/str}}</label>
+                <input class="form-control" type="text" id="ec-template-name" name="name" required value="{{name}}">
+            </div>
+            <div class="col-md-4">
+                <label for="ec-template-description">{{#str}} templatedescription, easycertificate {{/str}}</label>
+                <input class="form-control" type="text" id="ec-template-description" name="description" value="{{description}}">
+            </div>
+            <div class="col-md-1">
+                <label for="ec-template-format">{{#str}} paper, easycertificate {{/str}}</label>
+                <select class="form-control" id="ec-template-format" name="format">
+                    <option value="A4">A4</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="ec-template-orientation">{{#str}} orientation, easycertificate {{/str}}</label>
+                <select class="form-control" id="ec-template-orientation" name="orientation">
+                    <option value="L">{{#str}} landscape, easycertificate {{/str}}</option>
+                    <option value="P" {{#orientationportraitselected}}selected{{/orientationportraitselected}}>{{#str}} portrait, easycertificate {{/str}}</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <label class="d-block" for="ec-template-enabled">{{#str}} active, easycertificate {{/str}}</label>
+                <input type="checkbox" id="ec-template-enabled" name="enabled" value="1" {{#enabled}}checked{{/enabled}}>
+            </div>
+        </div>
+    </div>
+
+    <div class="ec-editor">
+        <div class="ec-toolbar card">
+            <div class="card-body">
+                <div class="ec-toolbar-actions">
+                    <button type="submit" class="btn btn-primary btn-sm ec-save-btn">
+                        <i class="fa fa-save" aria-hidden="true"></i> {{#str}} save, easycertificate {{/str}}
+                    </button>
+                    <a class="btn btn-secondary btn-sm ec-back-btn" href="{{templatesurl}}">
+                        <i class="fa fa-arrow-left" aria-hidden="true"></i> {{#str}} back, easycertificate {{/str}}
+                    </a>
+                    <button type="button" class="btn btn-light btn-sm" id="ec-add-page">
+                        <i class="fa fa-file-o" aria-hidden="true"></i> {{#str}} page, easycertificate {{/str}}
+                    </button>
+                </div>
+                <hr>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-ec-add="text">
+                    <i class="fa fa-font" aria-hidden="true"></i> {{#str}} text, easycertificate {{/str}}
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-ec-add="userfield">
+                    <i class="fa fa-user" aria-hidden="true"></i> {{#str}} userfield, easycertificate {{/str}}
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-ec-add="concat">
+                    <i class="fa fa-puzzle-piece" aria-hidden="true"></i> {{#str}} concatenation, easycertificate {{/str}}
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-ec-add="date">
+                    <i class="fa fa-calendar" aria-hidden="true"></i> {{#str}} date, easycertificate {{/str}}
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-ec-add="signature">
+                    <i class="fas fa-signature" aria-hidden="true"></i> {{#str}} digitalsignature, easycertificate {{/str}}
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-ec-add="image">
+                    <i class="fa fa-image" aria-hidden="true"></i> {{#str}} image, easycertificate {{/str}}
+                </button>
+                <hr>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary btn-sm" id="ec-zoom-out">
+                        <i class="fa fa-search-minus" aria-hidden="true"></i> {{#str}} zoomout, easycertificate {{/str}}
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" id="ec-zoom-label">100%</button>
+                    <button type="button" class="btn btn-secondary btn-sm" id="ec-zoom-in">
+                        <i class="fa fa-search-plus" aria-hidden="true"></i> {{#str}} zoomin, easycertificate {{/str}}
+                    </button>
+                </div>
+                <hr>
+                <div id="ec-pages-tabs" class="ec-pages-tabs"></div>
+            </div>
+        </div>
+        <div class="ec-workarea">
+            <div id="ec-stage-wrap" class="ec-stage-wrap">
+                <div id="ec-guide-x" class="ec-guide ec-guide-x"></div>
+                <div id="ec-guide-y" class="ec-guide ec-guide-y"></div>
+                <div id="ec-stage" class="ec-stage"></div>
+            </div>
+        </div>
+        <div class="ec-items-panel card">
+            <div class="card-body">
+                <div class="ec-items-title">{{#str}} addeditems, easycertificate {{/str}}</div>
+                <div id="ec-items-list" class="ec-items-list"></div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="modal fade" id="ec-field-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">{{#str}} field, easycertificate {{/str}}</h5>
+            <button type="button" class="close btn-close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="{{#str}} close, easycertificate {{/str}}">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="ec-modal-type">
+            <div class="form-group ec-userfield-row">
+                <label for="ec-userfield-select">{{#str}} userfields, easycertificate {{/str}}</label>
+                <select id="ec-userfield-select" class="form-control"></select>
+            </div>
+            <div class="form-group ec-customfield-row">
+                <label for="ec-customfield">{{#str}} customfield, easycertificate {{/str}}</label>
+                <input id="ec-customfield" class="form-control">
+            </div>
+            <div class="form-group ec-datefield-row">
+                <label for="ec-datefield-select">{{#str}} datetype, easycertificate {{/str}}</label>
+                <select id="ec-datefield-select" class="form-control"></select>
+            </div>
+            <div class="form-group ec-concatfield-row">
+                <label for="ec-concatfield-select">{{#str}} insertfieldconcat, easycertificate {{/str}}</label>
+                <select id="ec-concatfield-select" class="form-control"></select>
+            </div>
+            <div class="alert alert-info ec-help-box">
+                <button type="button" class="btn btn-link btn-sm p-0 ec-info-toggle">
+                    <i class="fa fa-info-circle" aria-hidden="true"></i> {{#str}} howtouse, easycertificate {{/str}}
+                </button>
+                <div class="ec-info-content mt-2">
+                    {{#str}} fieldhelpfirst, easycertificate {{/str}}
+                    <code>{firstname} {lastname}</code>, <code>{issuedate}</code>, <code>{course}</code>.<br>
+                    {{#str}} fieldhelpsecond, easycertificate {{/str}}
+                    <code>{{#str}} fieldhelpexample, easycertificate {{/str}}</code>.
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="ec-text">{{#str}} textconcat, easycertificate {{/str}}</label>
+                <textarea id="ec-text" name="ec_text_buffer" class="form-control ec-html-field" rows="8" placeholder="{{#str}} textplaceholder, easycertificate {{/str}}"></textarea>
+            </div>
+            <div class="row ec-inline-style-row">
+                <div class="col-md-6">
+                    <label for="ec-size">{{#str}} selectedtextsize, easycertificate {{/str}}</label>
+                    <div class="input-group ec-style-control">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" title="{{#str}} size, easycertificate {{/str}}">
+                                <i class="fa fa-text-height" aria-hidden="true"></i>
+                            </span>
+                        </div>
+                        <input id="ec-size" type="number" class="form-control" value="24" min="8">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="ec-color">{{#str}} selectedtextcolor, easycertificate {{/str}}</label>
+                    <div class="input-group ec-style-control ec-color-control">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" title="{{#str}} color, easycertificate {{/str}}">
+                                <i class="fa fa-paint-brush" aria-hidden="true"></i>
+                            </span>
+                        </div>
+                        <input id="ec-color" type="color" class="form-control" value="#111111">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">{{#str}} cancel, easycertificate {{/str}}</button>
+            <button type="button" id="ec-field-save" class="btn btn-primary">{{#str}} add, easycertificate {{/str}}</button>
+        </div>
+    </div></div>
+</div>
+
+<div class="modal fade" id="ec-image-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">{{#str}} image, easycertificate {{/str}}</h5>
+            <button type="button" class="close btn-close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="{{#str}} close, easycertificate {{/str}}">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="ec-image-file">{{#str}} file, easycertificate {{/str}}</label>
+                <input id="ec-image-file" type="file" class="form-control" accept="image/png,image/jpeg">
+            </div>
+            <label><input id="ec-image-bg" type="checkbox"> {{#str}} usebackgroundimage, easycertificate {{/str}}</label>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">{{#str}} cancel, easycertificate {{/str}}</button>
+            <button type="button" id="ec-image-save" class="btn btn-primary">{{#str}} add, easycertificate {{/str}}</button>
+        </div>
+    </div></div>
+</div>
+
+<div class="modal fade" id="ec-signature-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">{{#str}} digitalsignature, easycertificate {{/str}}</h5>
+            <button type="button" class="close btn-close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="{{#str}} close, easycertificate {{/str}}">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="alert alert-info ec-help-box">{{#str}} signaturehelp, easycertificate {{/str}}</div>
+            <div class="form-group">
+                <label for="ec-signature-cert">{{#str}} digitalcertificatefile, easycertificate {{/str}}</label>
+                <input id="ec-signature-cert" type="file" class="form-control" accept=".pfx,.p12,application/x-pkcs12">
+            </div>
+            <div class="form-group">
+                <label for="ec-signature-password">{{#str}} certificatepassword, easycertificate {{/str}}</label>
+                <input id="ec-signature-password" type="password" class="form-control" autocomplete="new-password">
+            </div>
+            <div class="form-group">
+                <label for="ec-signature-mask">{{#str}} signaturemask, easycertificate {{/str}}</label>
+                <input id="ec-signature-mask" type="file" class="form-control" accept="image/png,image/jpeg" data-required="1">
+            </div>
+            <div id="ec-signature-mask-error" class="alert alert-danger ec-signature-error" role="alert">
+                {{#str}} signaturemaskrequired, easycertificate {{/str}}
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">{{#str}} cancel, easycertificate {{/str}}</button>
+            <button type="button" id="ec-signature-save" class="btn btn-primary">{{#str}} add, easycertificate {{/str}}</button>
+        </div>
+    </div></div>
+</div>
+
+<div class="modal fade" id="ec-rename-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">{{#str}} renameitem, easycertificate {{/str}}</h5>
+            <button type="button" class="close btn-close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="{{#str}} close, easycertificate {{/str}}">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="ec-rename-id">
+            <div class="form-group">
+                <label for="ec-rename-name">{{#str}} itemname, easycertificate {{/str}}</label>
+                <input id="ec-rename-name" type="text" class="form-control" autocomplete="off">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">{{#str}} cancel, easycertificate {{/str}}</button>
+            <button type="button" id="ec-rename-save" class="btn btn-primary">{{#str}} save, easycertificate {{/str}}</button>
+        </div>
+    </div></div>
+</div>
+
+<div class="modal fade" id="ec-preview-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">{{#str}} templatepreview, easycertificate {{/str}}</h5>
+            <button type="button" class="close btn-close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="{{#str}} close, easycertificate {{/str}}">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body"><div id="ec-preview-body" class="ec-preview-body"></div></div>
+    </div></div>
+</div>
